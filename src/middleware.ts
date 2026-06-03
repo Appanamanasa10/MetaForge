@@ -6,7 +6,7 @@ export default withAuth(
     const { pathname } = req.nextUrl;
     
     // Custom handling for protected API routes to return JSON instead of redirecting
-    if (pathname.startsWith('/api/')) {
+    if (pathname.startsWith('/api/') && !pathname.startsWith('/api/auth') && pathname !== '/api/health') {
       if (!req.nextauth.token) {
         return NextResponse.json(
           { success: false, message: 'Unauthorized' },
