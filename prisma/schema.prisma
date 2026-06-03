@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(cuid())
+  name          String?
+  email         String?        @unique
+  createdAt     DateTime       @default(now())
+  passwordHash  String?
+  applications  Application[]
+  notifications Notification[]
+}
+
+model Application {
+  id          String     @id @default(cuid())
+  ownerId     String
+  name        String
+  description String?
+  createdAt   DateTime   @default(now())
+  owner       User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  entities    Entity[]
+  workflows   Workflow[]
+}
+
+model Entity {
+  id            String      @id @default(cuid())
+  applicationId String
+  name          String
+  schemaJson    Json
+  createdAt     DateTime    @default(now())
+  auditLogs     AuditLog[]
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  records       Record[]
+}
+
+model Record {
+  id        String   @id @default(cuid())
+  entityId  String
+  dataJson  Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  entity    Entity   @relation(fields: [entityId], references: [id], onDelete: Cascade)
+}
+
+model Workflow {
+  id                String      @id @default(cuid())
+  applicationId     String
+  triggerType       String
+  actionType        String
+  configurationJson Json
+  createdAt         DateTime    @default(now())
+  application       Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id         String   @id @default(cuid())
+  userId     String
+  title      String
+  message    String
+  readStatus Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  entityId  String
+  action    String
+  payload   Json
+  createdAt DateTime @default(now())
+  entity    Entity   @relation(fields: [entityId], references: [id], onDelete: Cascade)
+}
