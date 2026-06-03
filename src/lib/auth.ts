@@ -90,17 +90,6 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
-  cookies: {
-    sessionToken: {
-      name: env.NODE_ENV === 'production' ? '__Secure-next-auth.session-token' : 'next-auth.session-token',
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: env.NODE_ENV === 'production',
-      },
-    },
-  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {

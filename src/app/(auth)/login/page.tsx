@@ -55,7 +55,11 @@ function LoginForm() {
         toast.error(res.error || 'Login failed. Please check credentials.');
       } else {
         toast.success('Welcome back to MetaForge!');
-        router.push('/dashboard');
+        // Use a full page navigation so the browser sends the new session
+        // cookie on the next request. Client-side router.push may reuse a
+        // cached RSC payload and never hit the server with the cookie.
+        const destination = searchParams.get('callbackUrl') || '/dashboard';
+        window.location.href = destination;
       }
     } catch (err) {
       toast.error('An unexpected error occurred during login.');
@@ -82,7 +86,8 @@ function LoginForm() {
         toast.error(res.error || 'Sandbox login failed.');
       } else {
         toast.success('Logged in to Developer Sandbox!');
-        router.push('/dashboard');
+        const destination = searchParams.get('callbackUrl') || '/dashboard';
+        window.location.href = destination;
       }
     } catch (err) {
       toast.error('An unexpected error occurred during Sandbox login.');

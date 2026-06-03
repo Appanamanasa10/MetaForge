@@ -66,18 +66,14 @@ export default function DashboardPage() {
     });
   };
 
-  // Redirect unauthenticated users
+  // Show loading state while session hydrates.
+  // Middleware already protects this route; no client-side redirect needed.
   if (status === 'loading') {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
         <Loader2 className="animate-spin h-8 w-8 text-blue-500" />
       </div>
     );
-  }
-
-  if (status === 'unauthenticated') {
-    router.push('/login');
-    return null;
   }
 
   return (
