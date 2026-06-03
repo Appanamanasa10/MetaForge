@@ -90,6 +90,17 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
+  cookies: {
+    sessionToken: {
+      name: env.NODE_ENV === 'production' ? '__Secure-next-auth.session-token' : 'next-auth.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: env.NODE_ENV === 'production',
+      },
+    },
+  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
@@ -99,9 +110,15 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      if (token && session.user) {
-        (session.user as any).id = token.id;
-        (session.user as any).provider = token.provider;
+      if (token) {
+        if (!session.user) {
+          session.user = {
+            name: token.name,
+            email: token.email,
+          };
+        }
+        (session.user as any).id = token.id as string;
+        (session.user as any).provider = token.provider as string;
       }
       return session;
     },

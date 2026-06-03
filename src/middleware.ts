@@ -1,5 +1,6 @@
 import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
+import { env } from '@/lib/env';
 
 export default withAuth(
   function middleware(req) {
@@ -18,6 +19,7 @@ export default withAuth(
     return NextResponse.next();
   },
   {
+    secret: env.NEXTAUTH_SECRET,
     callbacks: {
       authorized({ req, token }) {
         const { pathname } = req.nextUrl;
