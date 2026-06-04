@@ -66,3 +66,86 @@ export async function POST(req: Request) {
     );
   }
 }
+
+export async function PATCH(req: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+    }
+    const userId = (session.user as any).id;
+
+    const body = await req.json();
+    const { id, name, description } = body;
+
+    if (!id) {
+      return NextResponse.json({ success: false, message: 'Application ID is required' }, { status: 400 });
+    }
+    if (!name || name.trim() === '') {
+      return NextResponse.json({ success: false, message: 'Application name is required' }, { status: 400 });
+    }
+
+    // Verify ownership
+    const existing = await db.application.findUnique({ where: { id } });
+    if (!existing || existing.ownerId !== userId) {
+      return NextResponse.json({ success: false, message: 'Application not found or unauthorized' }, { status: 404 });
+    }
+
+    const updated = await db.application.update({
+      where: { id },
+      data: {
+        name: name.trim(),
+        description: description?.trim() ?? existing.description,
+      },
+    });
+
+    return NextResponse.json({ success: true, data: updated });
+  } catch (error: any) {
+    console.error('[APPLICATIONS_PATCH]', error);
+    return NextResponse.json(
+      { success: false, message: error.message || 'Failed to update application' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(req: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+    }
+    const userId = (session.user as any).id;
+
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ success: false, message: 'Application ID is required' }, { status: 400 });
+    }
+
+    // Verify ownership
+    const existing = await db.application.findUnique({
+      where: { id },
+      include: { entities: { include: { records: true } } },
+    });
+    if (!existing || existing.ownerId !== userId) {
+      return NextResponse.json({ success: false, message: 'Application not found or unauthorized' }, { status: 404 });
+    }
+
+    // Cascade delete: records → entities → application
+    for (const entity of existing.entities) {
+      await db.record.deleteMany({ where: { entityId: entity.id } });
+    }
+    await db.entity.deleteMany({ where: { applicationId: id } });
+    await db.application.delete({ where: { id } });
+
+    return NextResponse.json({ success: true, message: 'Application deleted successfully' });
+  } catch (error: any) {
+    console.error('[APPLICATIONS_DELETE]', error);
+    return NextResponse.json(
+      { success: false, message: error.message || 'Failed to delete application' },
+      { status: 500 }
+    );
+  }
+}
