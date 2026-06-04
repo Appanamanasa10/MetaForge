@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
@@ -42,6 +42,19 @@ export default function DashboardPage() {
 
   // Dropdown open tracker
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    if (!openMenu) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpenMenu(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [openMenu]);
 
   // Fetch applications
   const { data: applications = [], isLoading, error } = useQuery<any[]>({
@@ -191,11 +204,6 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout>
-      {/* Close dropdown on outside click */}
-      {openMenu && (
-        <div className="fixed inset-0 z-10" onClick={() => setOpenMenu(null)} />
-      )}
-
       <div className="space-y-8 animate-fade-in-up">
 
         {/* ── Page Header ── */}
@@ -334,7 +342,7 @@ export default function DashboardPage() {
                       </div>
 
                       {/* Actions Menu */}
-                      <div className="relative shrink-0">
+                      <div className="relative shrink-0" ref={openMenu === app.id ? menuRef : undefined}>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -346,7 +354,7 @@ export default function DashboardPage() {
                           <MoreVertical className="h-4 w-4" />
                         </button>
                         {openMenu === app.id && (
-                          <div className="absolute right-0 top-8 w-44 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-20 overflow-hidden animate-slide-down">
+                          <div className="absolute right-0 top-8 w-44 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-[60] overflow-hidden animate-slide-down">
                             <button
                               onClick={() => openEdit(app)}
                               className="flex items-center w-full px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800 hover:text-slate-100 transition-colors cursor-pointer"
